@@ -23,6 +23,18 @@ pip install -r requirements.txt
 python scripts/download_dataset.py --api_key YOUR_GOOGLE_API_KEY --folder_link "YOUR_GOOGLE_DRIVE_FOLDER_LINK" --output_directory /path/to/output/directory
 ```
 
+## Training
+
+```bash
+python scripts/train.py --data_path /path/to/your/dataset --model_save_path /path/to/save/model.pth
+```
+
+## Testing
+
+```bash
+python scripts/test.py --test_data_path /path/to/test/dataset --model_path /path/to/saved/model.pth
+```
+
 ## Inference
 
 ```bash

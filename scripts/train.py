@@ -6,6 +6,14 @@ from data import MeshDataset
 from losses import ChamferLoss
 from metrics import ChamferDistance
 from utils.sampling_operations import gumbel_softmax
+import argparse
+
+# Argument parser setup
+parser = argparse.ArgumentParser(description='Train MeshGNN for mesh simplification.')
+parser.add_argument('--data_path', type=str, required=True, help='Path to the training dataset.')
+parser.add_argument('--model_save_path', type=str, required=True, help='Path to save the trained model.')
+
+args = parser.parse_args()
 
 # Hyperparameters
 epochs = 10
@@ -13,7 +21,7 @@ learning_rate = 0.001
 batch_size = 1
 
 # Load dataset
-dataset = MeshDataset(root_dir='/notebooks/datasets/abc-dataset-chunk-0-obj-less-than-10mb/')
+dataset = MeshDataset(root_dir=args.data_path)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize model, loss function, optimizer
@@ -53,40 +61,6 @@ for epoch in range(epochs):
         
     
     print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss / len(dataloader)}")    
-
-
-# Load test dataset
-test_dataset = MeshDataset(root_dir='/notebooks/datasets/abc-dataset-chunk-0-obj-less-than-10mb/')
-test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-
-# Initialize Chamfer Distance for evaluation
-metric = ChamferDistance()
-    
-# After training, run evaluation on the test set before saving the model
-model.eval()  # Set model to evaluation mode
-total_metric = 0
-with torch.no_grad():
-    for data in test_loader:
-        predicted_prob = model(data)  # Predict points
-        
-        num_points = 10000  # Subsample to 10,000 points
-        indices = torch.randperm(data.x.size(0))[:num_points]
-        subsampled_points = data.x[indices]
-        subsampled_points = subsampled_points.unsqueeze(0)  # Add batch dimension, now (1, N, 3)
-        
-        # Sample using Gumbel-Softmax (differentiable)
-        gumbel_weights = gumbel_softmax(predicted_prob.squeeze(), temperature=0.5)
-        num_points_available = gumbel_weights.size(0)
-        # Forward pass: Hard selection (discrete) for Chamfer Distance
-        k = min(1000, num_points_available)  # Number of points to select
-        _, selected_indices = torch.topk(gumbel_weights, k=k, dim=0)
-        selected_points_hard = data.x[selected_indices].unsqueeze(0)  # Discrete point selection
-        
-        score = metric.evaluate(selected_points_hard, subsampled_points)  # Evaluate Chamfer Distance
-        total_metric += score.item()
-
-# Print final Chamfer Distance over the test set
-print(f"Test Chamfer Distance: {total_metric / len(test_loader)}")
     
 # Save the model
 torch.save(model.state_dict(), '/notebooks/models/mesh_gnn_model.pth')
