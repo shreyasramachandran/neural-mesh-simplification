@@ -9,10 +9,10 @@ from utils.sampling_operations import gumbel_softmax
 batch_size = 16
 
 # Load dataset and model
-test_dataset = MeshDataset(root_dir='/notebooks/datasets/abc/')
+test_dataset = MeshDataset(root_dir='/notebooks/datasets/abc-dataset-chunk-0-obj-less-than-10mb/')
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 model = MeshGNN(input_dim=3, hidden_dim=64, output_dim=1)
-model.load_state_dict(torch.load('/notebooks/models/mesh_gnn_model.pth'))
+model.load_state_dict(torch.load('/notebooks/models/mesh_gnn_model.pth',weights_only=True))
 model.eval()
 
 # Initialize metric

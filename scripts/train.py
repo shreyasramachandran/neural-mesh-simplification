@@ -13,7 +13,7 @@ learning_rate = 0.001
 batch_size = 1
 
 # Load dataset
-dataset = MeshDataset(root_dir='/notebooks/datasets/abc/')
+dataset = MeshDataset(root_dir='/notebooks/datasets/abc-dataset-chunk-0-obj-less-than-10mb/')
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize model, loss function, optimizer
@@ -56,7 +56,7 @@ for epoch in range(epochs):
 
 
 # Load test dataset
-test_dataset = MeshDataset(root_dir='/notebooks/datasets/abc/')
+test_dataset = MeshDataset(root_dir='/notebooks/datasets/abc-dataset-chunk-0-obj-less-than-10mb/')
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 
 # Initialize Chamfer Distance for evaluation
