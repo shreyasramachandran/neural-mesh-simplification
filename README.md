@@ -28,3 +28,14 @@ python scripts/download_dataset.py --api_key YOUR_GOOGLE_API_KEY --folder_link "
 ```bash
 python scripts/inference.py --input_mesh /path/to/input/mesh.obj --model_checkpoint /path/to/pretrained/model.pth
 ```
+
+## Common Issues and Solutions
+
+### 1. Module Not Found Error
+If you encounter a `ModuleNotFoundError` when importing modules like `model`,`data`,`losses`,`metrics` it’s likely because Python cannot find the project folder in the `PYTHONPATH`.
+
+To fix this, add the repository folder to your `PYTHONPATH`:
+
+```bash
+export PYTHONPATH=$PYTHONPATH:/path/to/neural-mesh-simplification
+```
