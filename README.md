@@ -38,7 +38,7 @@ python scripts/test.py --test_data_path /path/to/test/dataset --model_path /path
 ## Inference
 
 ```bash
-python scripts/inference.py --input_mesh /path/to/input/mesh.obj --model_checkpoint /path/to/pretrained/model.pth
+python scripts/inference.py --input_mesh /path/to/input/mesh.obj --model_checkpoint /path/to/pretrained/model.pth --output_dir /path/to/output/directory/
 ```
 
 ## Common Issues and Solutions
