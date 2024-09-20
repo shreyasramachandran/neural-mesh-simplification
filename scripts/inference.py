@@ -35,7 +35,7 @@ with torch.no_grad():
 
 # Filter out vertices with predicted probabilities less than 0.5
 predicted_prob = predicted_prob.squeeze()
-vertices_to_keep = torch.where(predicted_prob < 0.5)[0]
+vertices_to_keep = torch.where(predicted_prob > 0.01)[0]
 
 # Convert indices to numpy for further mesh manipulation
 vertices_to_keep_np = vertices_to_keep.numpy()
