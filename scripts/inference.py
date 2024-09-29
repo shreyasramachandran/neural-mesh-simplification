@@ -33,10 +33,21 @@ data = Data(x=vertices, edge_index=edges)
 with torch.no_grad():
     predicted_prob = model(data)  # Pass the data object directly to the model
 
-# Filter out vertices with predicted probabilities less than 0.5
-predicted_prob = predicted_prob.squeeze()
+print('Shape of predicted prob',predicted_prob.shape[0])
+# Assuming predicted_prob is a tensor of shape (N, 1)
+# First, squeeze it to remove the singleton dimension
+predicted_prob_flat = predicted_prob.squeeze()  # Shape: (N,)
 
-vertices_to_keep = torch.where(predicted_prob > 0.01)[0]
+# Determine the number of vertices to keep (top 70%)
+num_vertices = predicted_prob_flat.shape[0]
+k = int(0.7 * num_vertices)
+
+# Get the indices of the top k probabilities
+_, vertices_to_keep = torch.topk(predicted_prob_flat, k)
+
+print('Vertices kept size',vertices_to_keep.shape[0])
+
+# vertices_to_keep = torch.where(predicted_prob > 0.01)[0]
 
 # Convert indices to numpy for further mesh manipulation
 vertices_to_keep_np = vertices_to_keep.numpy()
@@ -66,14 +77,8 @@ for edge in mesh.edges:
 
 filtered_edges = np.array(filtered_edges)
 
-# Filter vertex normals (if present) based on vertices to keep
-if mesh.vertex_normals is not None:
-    filtered_normals = mesh.vertex_normals[vertices_to_keep_np]
-else:
-    filtered_normals = None
-
 # Create a new mesh with the filtered vertices, faces, edges, and normals
-filtered_mesh = Trimesh(vertices=filtered_vertices, faces=filtered_faces, vertex_normals=filtered_normals, edges=filtered_edges)
+filtered_mesh = Trimesh(vertices=filtered_vertices, faces=filtered_faces, edges=filtered_edges)
 
 # Generate the output file name based on input mesh name
 mesh_name = os.path.splitext(os.path.basename(args.mesh_path))[0]

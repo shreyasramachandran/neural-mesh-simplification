@@ -7,18 +7,36 @@ from losses import ChamferLoss
 from metrics import ChamferDistance
 from utils.sampling_operations import gumbel_softmax
 import argparse
+import os
+
+# Function to check GPU memory
+def print_gpu_memory_usage():
+    allocated = torch.cuda.memory_allocated() / (1024 ** 3)  # Convert from bytes to GB
+    reserved = torch.cuda.memory_reserved() / (1024 ** 3)    # Reserved but not yet allocated
+    free = torch.cuda.memory_reserved() - torch.cuda.memory_allocated()  # Free within reserved
+
+    print(f"Allocated Memory: {allocated:.2f} GB")
+    print(f"Reserved Memory: {reserved:.2f} GB")
+    print(f"Free Memory: {free / (1024 ** 3):.2f} GB")
 
 # Argument parser setup
 parser = argparse.ArgumentParser(description='Train MeshGNN for mesh simplification.')
 parser.add_argument('--data_path', type=str, required=True, help='Path to the training dataset.')
 parser.add_argument('--model_save_path', type=str, required=True, help='Path to save the trained model.')
+parser.add_argument('--loss_file', type=str, default='/notebooks/models/losses.txt', help='Path to save the loss log.')
 
 args = parser.parse_args()
 
+# Check if GPU is available
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+
+
 # Hyperparameters
 epochs = 10
-learning_rate = 0.001
+learning_rate = 0.01
 batch_size = 1
+max_nodes = 32205
 
 # Load dataset
 dataset = MeshDataset(root_dir=args.data_path)
@@ -26,41 +44,52 @@ dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize model, loss function, optimizer
 model = MeshGNN(input_dim=3, hidden_dim=64, output_dim=1)
+model = model.to(device)
 criterion = ChamferLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
+# Create the directory if it doesn't exist
+os.makedirs(os.path.dirname(args.loss_file), exist_ok=True)
+
 # Training loop
 for epoch in range(epochs):
+    processed = 0
+    skippped = 0
     model.train()
     total_loss = 0
     for data in dataloader:
-        optimizer.zero_grad()
-        predicted_prob = model(data)  # Get predicted importance scores
-        
-        num_points = 10000  # Subsample to 10,000 points
-        indices = torch.randperm(data.x.size(0))[:num_points]
-        subsampled_points = data.x[indices]
-        subsampled_points = subsampled_points.unsqueeze(0)  # Add batch dimension, now (1, N, 3)
-        
-        # Sample using Gumbel-Softmax (differentiable)
-        gumbel_weights = gumbel_softmax(predicted_prob.squeeze(), temperature=0.5)
-        num_points_available = gumbel_weights.size(0)
-        # Forward pass: Hard selection (discrete) for Chamfer Distance
-        k = min(1000, num_points_available)  # Number of points to select
-        _, selected_indices = torch.topk(gumbel_weights, k=k, dim=0)
-        selected_points_hard = data.x[selected_indices].unsqueeze(0)  # Discrete point selection
-        # Chamfer Distance requires discrete points, so we use `selected_points_hard`
-        loss = criterion(selected_points_hard, subsampled_points)  # Calculate Chamfer Distance
-        # Backward pass: Use straight-through estimator to allow gradient flow through soft selection
-        selected_points_soft = (gumbel_weights.unsqueeze(-1) * data.x).sum(dim=0, keepdim=True)
-        
-        # Perform backpropagation using the soft points for gradient flow
-        selected_points_soft.backward(torch.ones_like(selected_points_soft))
-        optimizer.step()
-        total_loss += loss.item()
-        
+        # After each iteration or batch
+        num_nodes = data.x.shape[0]
+        if (num_nodes > max_nodes):
+            skippped += 1
+            continue
+        else:
+            print(processed)
+            # print(data.x.shape[0],len(data.edge_index[0]))
+            processed += 1
+            data = data.to(device)
+            optimizer.zero_grad()
+            predicted_prob = model(data)  # Get predicted importance scores
+            subsampled_points = data.x.unsqueeze(0)
+            # Sample using Gumbel-Softmax (differentiable)
+            gumbel_weights = gumbel_softmax(predicted_prob.squeeze(), temperature=0.5)
+            # Forward pass: Soft selection for Chamfer Distance
+            # Here, we use soft-selected points for loss calculation to preserve gradients.
+            selected_points_soft = (gumbel_weights.unsqueeze(-1) * data.x).sum(dim=1, keepdim=True)  # Soft selection
+            # Chamfer Distance calculation with soft points
+            loss = criterion(selected_points_soft, subsampled_points, predicted_prob)  # Use soft points in Chamfer loss
+            # Perform backpropagation using the soft points for gradient flow
+            loss.backward()  # Backpropagate through the loss
+            optimizer.step()
+            total_loss += loss.item()            
     
-    print(f"Epoch {epoch+1}/{epochs}, Loss: {total_loss / len(dataloader)}")    
-    
-# Save the model
-torch.save(model.state_dict(), '/notebooks/models/mesh_gnn_model.pth')
+    print(f'Processed {processed}, Skipped: {skippped}')
+    checkpoint_path = f"{args.model_save_path}_epoch_{epoch+1}.pth"    
+    torch.save(model.state_dict(), checkpoint_path)
+    # Calculate average loss for the epoch
+    avg_loss = total_loss / processed
+    print(f"Epoch {epoch+1}/{epochs}, Total Loss: {total_loss}, Average Loss: {avg_loss}")
+
+    # Save total and average loss to file
+    with open(args.loss_file, 'a') as f:
+        f.write(f"Epoch {epoch+1}, Total Loss: {total_loss}, Average Loss: {avg_loss}\n")
