@@ -14,7 +14,7 @@ parser.add_argument('--model_path', type=str, required=True, help='Path to the s
 args = parser.parse_args()
 
 # Hyperparameters
-batch_size = 16
+batch_size = 1
 
 # Load dataset 
 test_dataset = MeshDataset(root_dir=args.test_data_path)
