@@ -25,7 +25,7 @@ parser.add_argument('--output_dir', type=str, required=True, help='Directory to 
 args = parser.parse_args()
 
 # Load the pre-trained model (default device)
-model = MeshGNN(input_dim=3, hidden_dim=3, output_dim=3)
+model = MeshGNN(input_dim=3, hidden_dim=64, sample_ratio=0.1)
 model.load_state_dict(torch.load(args.model_path, weights_only=True))
 
 model.eval()  # Set model to evaluation mode
@@ -45,23 +45,35 @@ max_dim = (vertices.max(dim=0)[0] - vertices.min(dim=0)[0]).max()  # Get max dim
 vertices /= max_dim  # Scale all vertices
 vertices *= 5  # Adjust the scaling factor to increase the vertex range
 
+
 # Create a PyTorch Geometric Data object
 data = Data(x=vertices, edge_index=edges)
 
 # Perform inference using the model
 with torch.no_grad():
-    predicted_vertices = model(data)  # Pass the data object directly to the model
+    sampled_vertices = model(data)  # Pass the data object directly to the model
 
-print(predicted_vertices.shape)
+# # Step 1: Apply Gumbel-Softmax (soft sampling) to generate new vertices
+# gumbel_weights = gumbel_softmax(predicted_probs.squeeze(), temperature=0.5)  # soft sampling
 
-# Create a new mesh with the soft-selected vertices
-transformed_mesh = Trimesh(vertices=predicted_vertices,process=False)
+# # Step 2: Perform soft selection by applying Gumbel weights to the original vertices
+# selected_points_soft = (gumbel_weights * data.x)  # shape (N, 3)
 
-# Generate the output file name based on input mesh name
+# # No need for top-k because soft sampling includes all vertices, weighted by the Gumbel weights
+
+# # Step 3: Re-use the original edges and faces (since no vertices are removed)
+# original_faces = mesh.faces
+# original_edges = mesh.edges
+
+# Step 4: Create a new mesh with the soft-selected vertices but retain original edges and faces
+# new_mesh = Trimesh(vertices=selected_points_soft.cpu().numpy(), edges=original_edges, faces=original_faces)
+new_mesh = Trimesh(vertices=sampled_vertices.cpu().numpy())
+
+# Step 5: Generate the output file name based on input mesh name
 mesh_name = os.path.splitext(os.path.basename(args.mesh_path))[0]
-output_file = os.path.join(args.output_dir, f"{mesh_name}_transformed.obj")
+output_file = os.path.join(args.output_dir, f"{mesh_name}_sampled_vertices.obj")
 
-# Save the filtered mesh to the output path
-transformed_mesh.export(output_file)
+# Step 6: Save the new mesh to the output path
+new_mesh.export(output_file)
 
-print(f"Transformed mesh saved to {output_file}")
+print(f"Soft sampled mesh saved to {output_file}")

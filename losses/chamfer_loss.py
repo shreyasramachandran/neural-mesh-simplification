@@ -86,7 +86,7 @@ class ChamferLoss(nn.Module):
         super(ChamferLoss, self).__init__()
         self.h = h
     
-    def forward(self, points1, points2, h=0.1, k_neighbors=4):
+    def forward(self, points1, points2, h=0.1, k_neighbors=10):
         """
         Compute the adaptive Chamfer Loss between two point clouds points1 and points2 with curvature weighting.
 
@@ -100,29 +100,25 @@ class ChamferLoss(nn.Module):
         """
         B, N, D = points1.shape
         M = points2.shape[1]
-        print(points1)
-        print(points2)
-        
+
         # Compute distances between points1 and points2
         dist_p1_p2 = torch.cdist(points1, points2, p=2)  # Shape: (B, N, M)
         dist_p2_p1 = torch.cdist(points2, points1, p=2)  # Shape: (B, M, N)
 
         # First term: Nearest distance for each point in points1 to points2
         min_dist_p1_p2, _ = torch.min(dist_p1_p2, dim=-1)  # Shape: (B, N)
-        
 
         # Second term: Nearest distance for each point in points2 to points1
         min_dist_p2_p1, _ = torch.min(dist_p2_p1, dim=-1)  # Shape: (B, M)
-
+        
         # Calculate curvature values for points1
         curvatures1 = calculate_curvature(points1, k_neighbors=k_neighbors)  # Shape: (B, N)
-        # print(curvatures1)
-
+        
         # Apply curvature weights using Gaussian smoothing
         smoothed_curvatures = calculate_smoothed_curvatures(points1, curvatures1, h)
 
         # First term with curvature weighting
-        loss_term1 = torch.sum(smoothed_curvatures * (min_dist_p1_p2 ** 2), dim=-1)  # Shape: (B,)
+        loss_term1 = torch.sum((min_dist_p1_p2 ** 2), dim=-1)  # Shape: (B,)
 
         # Second term without curvature weighting
         loss_term2 = torch.sum(min_dist_p2_p1 ** 2, dim=-1)  # Shape: (B,)

@@ -47,7 +47,7 @@ args = parser.parse_args()
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Hyperparameters
-epochs = 2
+epochs = 200
 learning_rate = 0.001
 batch_size = 1
 max_nodes = 10000 # 32205
@@ -57,7 +57,7 @@ dataset = MeshDataset(root_dir=args.data_path)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize model, loss function, optimizer
-model = MeshGNN(input_dim=3, hidden_dim=3, output_dim=3)
+model = MeshGNN(input_dim=3, hidden_dim=64, sample_ratio=0.2)
 model = model.to(device)
 criterion = ChamferLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
@@ -81,18 +81,9 @@ for epoch in range(epochs):
             processed += 1
             data = data.to(device)
             optimizer.zero_grad()
-            predicted_vertices = model(data)  # Get predicted importance scores
-#             print(predicted_prob)
-            subsampled_points = data.x.unsqueeze(0)
-#             # Sample using Gumbel-Softmax (differentiable)
-#             gumbel_weights = gumbel_softmax(predicted_prob.squeeze(), temperature=0.5)
-            
-#             # Forward pass: Soft selection for Chamfer Distance
-#             # Here, we use soft-selected points for loss calculation to preserve gradients.
-#             selected_points_soft = (gumbel_weights.unsqueeze(-1) * data.x).unsqueeze(0)  # Soft selection
-#             print(selected_points_soft)
+            sampled_points = model(data)  # Get predicted importance scores
             # Chamfer Distance calculation with soft points
-            loss = criterion(subsampled_points,predicted_vertices.unsqueeze(0))  # Use soft points in Chamfer loss
+            loss = criterion(data.x.unsqueeze(0),sampled_points.unsqueeze(0))  # Use soft points in Chamfer loss
             # Perform backpropagation using the soft points for gradient flow
             loss.backward()  # Backpropagate through the loss
             #log_gradients(model) # Investigate gradients
