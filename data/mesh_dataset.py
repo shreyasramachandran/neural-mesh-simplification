@@ -18,6 +18,7 @@ class MeshDataset(Dataset):
         
         vertices = torch.tensor(mesh.vertices, dtype=torch.float)
         edges = torch.tensor(mesh.edges, dtype=torch.long).t().contiguous()
+        faces = torch.tensor(mesh.faces, dtype=torch.long).t().contiguous()
         
         # Center the mesh by subtracting the mean of the vertices
         vertices -= vertices.mean(dim=0)
@@ -28,6 +29,7 @@ class MeshDataset(Dataset):
         vertices *= 5  # Adjust the scaling factor to increase the vertex range
 
         data = Data(x=vertices, edge_index=edges)
+        data.faces = faces  # Add faces as a custom attribute
         
         if self.transform:
             data = self.transform(data)

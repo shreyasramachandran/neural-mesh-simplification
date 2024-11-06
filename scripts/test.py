@@ -20,7 +20,7 @@ batch_size = 1
 test_dataset = MeshDataset(root_dir=args.test_data_path)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 # Load model
-model = MeshGNN(input_dim=3, hidden_dim=64, output_dim=1)
+model = MeshGNN(input_dim=3, hidden_dim=64, sample_ratio=0.1)
 model.load_state_dict(torch.load(args.model_path, weights_only=True))
 model.eval()
 

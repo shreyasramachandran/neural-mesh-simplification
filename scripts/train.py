@@ -1,11 +1,10 @@
 import torch
 import torch.optim as optim
-from torch_geometric.loader import DataLoader
+from torch_geometric.loader import DataLoader 
 from model import MeshGNN
 from data import MeshDataset
-from losses import ChamferLoss
+from losses import MeshSimplificationLoss
 from metrics import ChamferDistance
-from utils.sampling_operations import gumbel_softmax
 import argparse
 import os
 import random
@@ -47,7 +46,7 @@ args = parser.parse_args()
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Hyperparameters
-epochs = 200
+epochs = 20
 learning_rate = 0.001
 batch_size = 1
 max_nodes = 10000 # 32205
@@ -59,14 +58,22 @@ dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 # Initialize model, loss function, optimizer
 model = MeshGNN(input_dim=3, hidden_dim=64, sample_ratio=0.2)
 model = model.to(device)
-criterion = ChamferLoss()
+criterion = MeshSimplificationLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Create the directory if it doesn't exist
 os.makedirs(os.path.dirname(args.loss_file), exist_ok=True)
 
+# At the start of training loop
+print("=== Start of training loop ===")
+print(f"Memory allocated: {torch.cuda.memory_allocated()/1e9:.2f} GB")
+print(f"Memory reserved: {torch.cuda.memory_reserved()/1e9:.2f} GB")
+
+
 # Training loop
 for epoch in range(epochs):
+    print(f"\n=== Start of epoch {epoch} ===")
+    print(f"Memory allocated: {torch.cuda.memory_allocated()/1e9:.2f} GB")
     processed = 0
     skippped = 0
     model.train()
@@ -81,14 +88,23 @@ for epoch in range(epochs):
             processed += 1
             data = data.to(device)
             optimizer.zero_grad()
-            sampled_points = model(data)  # Get predicted importance scores
+            pred = model(data)  # Get predicted importance scores
+            print(f"After forward - Memory allocated: {torch.cuda.memory_allocated()/1e9:.2f} GB")
             # Chamfer Distance calculation with soft points
-            loss = criterion(data.x.unsqueeze(0),sampled_points.unsqueeze(0))  # Use soft points in Chamfer loss
+            loss = criterion(pred,data)  # Use soft points in Chamfer loss
+            print(f"After loss - Memory allocated: {torch.cuda.memory_allocated()/1e9:.2f} GB")
             # Perform backpropagation using the soft points for gradient flow
             loss.backward()  # Backpropagate through the loss
+            print(f"After backward - Memory allocated: {torch.cuda.memory_allocated()/1e9:.2f} GB")
             #log_gradients(model) # Investigate gradients
             optimizer.step()
             total_loss += loss.item()            
+            
+            # Clear memory
+            del loss, pred
+            torch.cuda.empty_cache()
+    # End of epoch cleanup
+    torch.cuda.empty_cache()
     
     print(f'Processed {processed}, Skipped: {skippped}') 
     

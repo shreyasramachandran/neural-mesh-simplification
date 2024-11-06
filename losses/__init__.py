@@ -1,1 +1,1 @@
-from .chamfer_loss import ChamferLoss
+from .mesh_simplification_loss import MeshSimplificationLoss

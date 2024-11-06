@@ -3,7 +3,6 @@ import torch
 from model import MeshGNN
 from torch_geometric.data import Data
 from trimesh import load, Trimesh
-from utils.sampling_operations import gumbel_softmax
 import argparse
 import numpy as np
 import random
@@ -36,6 +35,7 @@ mesh = load(args.mesh_path)
 # Prepare the data for the model (no explicit device movement)
 vertices = torch.tensor(mesh.vertices, dtype=torch.float)
 edges = torch.tensor(mesh.edges, dtype=torch.long).t().contiguous()
+faces = torch.tensor(mesh.faces, dtype=torch.long).t().contiguous()
 
 # Center the mesh by subtracting the mean of the vertices
 vertices -= vertices.mean(dim=0)
@@ -48,30 +48,19 @@ vertices *= 5  # Adjust the scaling factor to increase the vertex range
 
 # Create a PyTorch Geometric Data object
 data = Data(x=vertices, edge_index=edges)
+data.faces = faces
 
 # Perform inference using the model
 with torch.no_grad():
-    sampled_vertices = model(data)  # Pass the data object directly to the model
+    pred = model(data)  # Pass the data object directly to the model
 
-# # Step 1: Apply Gumbel-Softmax (soft sampling) to generate new vertices
-# gumbel_weights = gumbel_softmax(predicted_probs.squeeze(), temperature=0.5)  # soft sampling
-
-# # Step 2: Perform soft selection by applying Gumbel weights to the original vertices
-# selected_points_soft = (gumbel_weights * data.x)  # shape (N, 3)
-
-# # No need for top-k because soft sampling includes all vertices, weighted by the Gumbel weights
-
-# # Step 3: Re-use the original edges and faces (since no vertices are removed)
-# original_faces = mesh.faces
-# original_edges = mesh.edges
-
-# Step 4: Create a new mesh with the soft-selected vertices but retain original edges and faces
-# new_mesh = Trimesh(vertices=selected_points_soft.cpu().numpy(), edges=original_edges, faces=original_faces)
-new_mesh = Trimesh(vertices=sampled_vertices.cpu().numpy())
+# Step 4: Create a Trimesh object from pred data
+new_mesh = Trimesh(vertices=pred['vertices'].cpu().numpy(),  # Convert to numpy if it's a PyTorch tensor
+                           faces=pred['faces'].cpu().numpy())        # Same for faces
 
 # Step 5: Generate the output file name based on input mesh name
 mesh_name = os.path.splitext(os.path.basename(args.mesh_path))[0]
-output_file = os.path.join(args.output_dir, f"{mesh_name}_sampled_vertices.obj")
+output_file = os.path.join(args.output_dir, f"{mesh_name}_sampled_mesh.obj")
 
 # Step 6: Save the new mesh to the output path
 new_mesh.export(output_file)
