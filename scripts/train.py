@@ -46,7 +46,7 @@ args = parser.parse_args()
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 # Hyperparameters
-epochs = 20
+epochs = 4
 learning_rate = 0.001
 batch_size = 1
 max_nodes = 10000 # 32205

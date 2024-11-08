@@ -146,7 +146,7 @@ def calculate_smoothed_curvatures(points1, curvatures1, h):
 
 
 class MeshSimplificationLoss(nn.Module):
-    def __init__(self, lambda_c=0.1, lambda_e=0.1, lambda_o=0.1, h=0.1):
+    def __init__(self, lambda_c=1, lambda_e=1, lambda_o=1, h=0.1):
         super(MeshSimplificationLoss, self).__init__()
         self.lambda_c = lambda_c  # Weight for collision loss
         self.lambda_e = lambda_e  # Weight for edge crossing loss
@@ -266,14 +266,14 @@ class MeshSimplificationLoss(nn.Module):
                     reverse_loss += (1 - py) * (valid_tri_probs * valid_tri_dists).mean()  
             
         # Add triangle count penalty
-        num_source_triangles = len(source_faces)
-        num_target_triangles = len(target_faces)
-        triangle_count_loss = triangle_penalty_weight * abs(num_source_triangles - num_target_triangles)
+        # num_source_triangles = len(source_faces)
+        # num_target_triangles = len(target_faces)
+        # triangle_count_loss = triangle_penalty_weight * abs(num_source_triangles - num_target_triangles)
         print('forward_loss',forward_loss)
         print('reverse_loss',reverse_loss)
-        print('triangle_count_loss',triangle_count_loss)
+        # print('triangle_count_loss',triangle_count_loss)
 
-        return forward_loss + reverse_loss + triangle_count_loss
+        return forward_loss + reverse_loss 
 
     def triangle_collision_loss(self, vertices, faces, face_probs):
         """

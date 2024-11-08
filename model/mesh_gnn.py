@@ -503,7 +503,14 @@ class MeshGNN(nn.Module):
         # Filter triangles based on probability threshold (0.5)
         #valid_triangles = candidate_triangles[final_triangle_probs > 0.0000002]
         # Filter both triangles and probabilities using the same mask
-        prob_mask = final_triangle_probs > 0.7
+        #prob_mask = final_triangle_probs > 0.7
+        k = 8000  # Specify the number of top elements you want to select
+        topk_probs, topk_indices = torch.topk(final_triangle_probs, k)
+
+        # Create a mask for these top k probabilities
+        prob_mask = torch.zeros_like(final_triangle_probs, dtype=torch.bool)
+        prob_mask[topk_indices] = True
+        
         valid_triangles = candidate_triangles[prob_mask]
         valid_probs = final_triangle_probs[prob_mask]
         print(f"Valid triangles shape after filtering: {valid_triangles.shape}")
