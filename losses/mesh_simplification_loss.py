@@ -146,7 +146,7 @@ def calculate_smoothed_curvatures(points1, curvatures1, h):
 
 
 class MeshSimplificationLoss(nn.Module):
-    def __init__(self, lambda_c=1, lambda_e=1, lambda_o=1, h=0.1):
+    def __init__(self, lambda_c=10, lambda_e=10, lambda_o=10, h=0.1):
         super(MeshSimplificationLoss, self).__init__()
         self.lambda_c = lambda_c  # Weight for collision loss
         self.lambda_e = lambda_e  # Weight for edge crossing loss
