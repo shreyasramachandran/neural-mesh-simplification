@@ -1,7 +1,7 @@
 import torch
 import torch.optim as optim
 from torch_geometric.loader import DataLoader 
-from model import MeshGNN
+from model import NeuralMeshSimplification
 from data import MeshDataset
 from losses import MeshSimplificationLoss
 from metrics import ChamferDistance
@@ -35,7 +35,7 @@ def log_gradients(model):
             print(f"Layer: {name} | Gradient Norm: {grad_norm}")
 
 # Argument parser setup
-parser = argparse.ArgumentParser(description='Train MeshGNN for mesh simplification.')
+parser = argparse.ArgumentParser(description='Train NeuralMeshSimplification for mesh simplification.')
 parser.add_argument('--data_path', type=str, required=True, help='Path to the training dataset.')
 parser.add_argument('--model_save_path', type=str, required=True, help='Path to save the trained model.')
 parser.add_argument('--loss_file', type=str, default='/notebooks/models/losses.txt', help='Path to save the loss log.')
@@ -56,7 +56,7 @@ dataset = MeshDataset(root_dir=args.data_path)
 dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 
 # Initialize model, loss function, optimizer
-model = MeshGNN(input_dim=3, hidden_dim=64, sample_ratio=0.2)
+model = NeuralMeshSimplification(input_dim=3, hidden_dim=64, sample_ratio=0.2)
 model = model.to(device)
 criterion = MeshSimplificationLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)

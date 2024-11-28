@@ -1,5 +1,5 @@
 import torch
-from model import MeshGNN
+from model import NeuralMeshSimplification
 from data import MeshDataset
 from metrics import ChamferDistance
 from torch_geometric.loader import DataLoader
@@ -7,7 +7,7 @@ from utils.sampling_operations import gumbel_softmax
 import argparse
 
 # Argument parser setup
-parser = argparse.ArgumentParser(description='Evaluate MeshGNN model on a test dataset.')
+parser = argparse.ArgumentParser(description='Evaluate NeuralMeshSimplification model on a test dataset.')
 parser.add_argument('--test_data_path', type=str, required=True, help='Path to the test dataset.')
 parser.add_argument('--model_path', type=str, required=True, help='Path to the saved model checkpoint.')
 
@@ -20,7 +20,7 @@ batch_size = 1
 test_dataset = MeshDataset(root_dir=args.test_data_path)
 test_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
 # Load model
-model = MeshGNN(input_dim=3, hidden_dim=64, sample_ratio=0.1)
+model = NeuralMeshSimplification(input_dim=3, hidden_dim=64, sample_ratio=0.1)
 model.load_state_dict(torch.load(args.model_path, weights_only=True))
 model.eval()
 

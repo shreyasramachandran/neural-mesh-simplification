@@ -1,6 +1,6 @@
 import os
 import torch
-from model import MeshGNN
+from model import NeuralMeshSimplification
 from torch_geometric.data import Data
 from trimesh import load, Trimesh
 import argparse
@@ -16,7 +16,7 @@ if torch.cuda.is_available():
     torch.cuda.manual_seed_all(seed)
 
 # Argument parser setup
-parser = argparse.ArgumentParser(description='Inference on a mesh using a pre-trained MeshGNN model.')
+parser = argparse.ArgumentParser(description='Inference on a mesh using a pre-trained NeuralMeshSimplification model.')
 parser.add_argument('--mesh_path', type=str, required=True, help='Path to the mesh file (OBJ format) for inference.')
 parser.add_argument('--model_path', type=str, required=True, help='Path to the pre-trained model file.')
 parser.add_argument('--output_dir', type=str, required=True, help='Directory to save the simplified mesh.')
@@ -24,7 +24,7 @@ parser.add_argument('--output_dir', type=str, required=True, help='Directory to 
 args = parser.parse_args()
 
 # Load the pre-trained model (default device)
-model = MeshGNN(input_dim=3, hidden_dim=64, sample_ratio=0.1)
+model = NeuralMeshSimplification(input_dim=3, hidden_dim=64, sample_ratio=0.1)
 model.load_state_dict(torch.load(args.model_path, weights_only=True))
 
 model.eval()  # Set model to evaluation mode
