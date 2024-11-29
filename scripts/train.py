@@ -3,7 +3,7 @@ import torch.optim as optim
 from torch_geometric.loader import DataLoader 
 from model import NeuralMeshSimplification
 from data import MeshDataset
-from losses import MeshSimplificationLoss
+from losses import CombinedLoss
 from metrics import ChamferDistance
 import argparse
 import os
@@ -58,7 +58,7 @@ dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
 # Initialize model, loss function, optimizer
 model = NeuralMeshSimplification(input_dim=3, hidden_dim=64, sample_ratio=0.2)
 model = model.to(device)
-criterion = MeshSimplificationLoss()
+criterion = CombinedLoss()
 optimizer = optim.Adam(model.parameters(), lr=learning_rate)
 
 # Create the directory if it doesn't exist

@@ -1,1 +1,5 @@
-from .mesh_simplification_loss import MeshSimplificationLoss
+from .combined_loss import CombinedLoss
+
+__all__ = [
+    "CombinedLoss"
+]
