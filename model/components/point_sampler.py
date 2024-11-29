@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch_geometric.nn import MessagePassing
 from torch_cluster import fps 
 
 class PointMLP(nn.Module):
@@ -195,7 +196,7 @@ class PointSampler(nn.Module):
             device=edge_index.device
         )
         dst_remapped = torch.tensor(
-            [idx_map[int(d.item())] for s in dst_filtered], 
+            [idx_map[int(d.item())] for d in dst_filtered], 
             device=edge_index.device
         )
         

@@ -1,11 +1,13 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from model import PointSampler, EdgePredictor, FaceClassifier
+from model.components.point_sampler import PointSampler
+from model.components.edge_predictor import EdgePredictor
+from model.components.face_classifier import FaceClassifier
 
 class NeuralMeshSimplification(nn.Module):
-    def __init__(self, input_dim = 3, hidden_dim, sample_ratio):
-        super(MeshGNN, self).__init__()
+    def __init__(self, input_dim, hidden_dim, sample_ratio):
+        super(NeuralMeshSimplification, self).__init__()
         
         # Point Sampler
         self.point_sampler = PointSampler(
