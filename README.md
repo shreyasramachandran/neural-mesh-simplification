@@ -1,12 +1,7 @@
 # Neural Mesh Simplification
 
 ## Overview
-Neural Mesh Simplification is a deep learning-based model for simplifying 3D meshes. The model leverages graph neural networks (GNNs) to reduce the number of faces in a mesh while preserving its geometric and topological properties. This approach is particularly useful for applications in computer graphics, gaming, and 3D modeling where simplified meshes are needed for faster processing and rendering without significant loss of detail.
-
-## Features
-- **Mesh Simplification**: Reduces the number of faces in a 3D mesh while retaining the original structure.
-- **Neural Network-based**: Uses Graph Convolutional Networks (GCNs) to learn mesh simplification.
-- **Supports all formats**: Works with meshes in the all major formats.
+Neural Mesh Simplification is a deep learning-based model for simplifying 3D meshes. The model is used to reduce the number of faces in a mesh while preserving its geometric and topological properties. This approach is particularly useful for applications in computer graphics, gaming, and 3D modeling where simplified meshes are needed for faster processing and rendering without significant loss of detail.
 
 ## Installation
 To install the necessary dependencies and set up the project, run the following commands:
